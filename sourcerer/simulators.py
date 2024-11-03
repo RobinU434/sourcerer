@@ -1,7 +1,6 @@
 """Taken from https://github.com/MaximeVandegar/NEB/blob/main/simulators"""
 import numpy as np
 import torch
-from torch import nn
 from torch.distributions import LogNormal, MultivariateNormal, Normal, Uniform
 from torchdiffeq import odeint
 
@@ -50,7 +49,15 @@ class TwoMoonsSimulator:
     def get_ground_truth_parameters(self):
         return torch.tensor([0.0, 0.7])
 
-    def sample_prior(self, size):
+    def sample_prior(self, size: int) -> torch.Tensor:
+        """sample specified prior from a 2D uniform distribution bounded to -1 and +1
+
+        Args:
+            size (int): how many samples you would like to acquire
+
+        Returns:
+            torch.Tensor: prior samples (size, 2)
+        """
         m = Uniform(
             torch.zeros((size, 2), device=self.device) - 1.0,
             torch.zeros((size, 2), device=self.device) + 1.0,
@@ -58,7 +65,16 @@ class TwoMoonsSimulator:
         theta = m.sample()
         return theta
 
-    def sample(self, context):
+    def sample(self, context: torch.Tensor) -> torch.Tensor:
+        """samples one moon given the prior as context.
+        You can sample 1000 prior samples with `TwoMoonSimulator().sample_prior(1000)`
+
+        Args:
+            context (torch.Tensor): prior samples. (n_samples, 2)
+
+        Returns:
+            torch.Tensor: samples for one moon (n_samples, 2)
+        """
         theta = context
         size_theta = theta.shape
 
@@ -111,14 +127,14 @@ class SLCPSimulator:
     def get_ground_truth_parameters(self):
         return torch.tensor([-0.7, -2.9, -1.0, -0.9, 0.6])
 
-    def sample_prior(self, size):
+    def sample_prior(self, size: int) -> torch.Tensor:
         uniform = Uniform(
             (torch.zeros(size, 5) + torch.tensor([-3.0])).to(self.device),
             (torch.zeros(size, 5) + torch.tensor([3.0])).to(self.device),
         )
         return uniform.sample()
 
-    def sample(self, context):
+    def sample(self, context: torch.Tensor) -> torch.Tensor:
         means = context[:, :2]
         s1 = torch.pow(context[:, 2], 2)
         s2 = torch.pow(context[:, 3], 2)
